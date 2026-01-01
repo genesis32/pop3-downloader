@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
@@ -16,13 +18,24 @@ type Config struct {
 	DryRun   bool
 }
 
+type ConfigFile struct {
+	Password string `toml:"password"`
+}
+
+func loadConfigFile(path string) (ConfigFile, error) {
+	var cfg ConfigFile
+	_, err := toml.DecodeFile(path, &cfg)
+	return cfg, err
+}
+
 func parseFlags() Config {
 	var config Config
+	var configPath string
 
 	flag.StringVar(&config.Host, "host", "", "POP3S server hostname (required)")
 	flag.IntVar(&config.Port, "port", 995, "POP3S server port")
 	flag.StringVar(&config.Username, "username", "", "Username for authentication (required)")
-	flag.StringVar(&config.Password, "password", "", "Password for authentication (required)")
+	flag.StringVar(&configPath, "config", "config.toml", "Path to config file containing password")
 	flag.StringVar(&config.MboxPath, "mbox", "./messages.mbox", "Path to output mbox file")
 	flag.BoolVar(&config.DryRun, "dryrun", false, "Download messages without deleting from server")
 
@@ -39,9 +52,17 @@ func parseFlags() Config {
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	// Load password from config file
+	configFile, err := loadConfigFile(configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to load config file '%s': %v\n", configPath, err)
+		os.Exit(1)
+	}
+	config.Password = configFile.Password
+
 	if config.Password == "" {
-		fmt.Fprintf(os.Stderr, "Error: -password is required\n")
-		flag.Usage()
+		fmt.Fprintf(os.Stderr, "Error: password not found in config file\n")
 		os.Exit(1)
 	}
 

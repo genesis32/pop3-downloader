@@ -1,0 +1,4 @@
+# POP3 Downloader Configuration
+# Copy this file to config.toml and fill in your password
+
+password = "your-password-here"
