@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -32,10 +33,18 @@ func parseFlags() Config {
 	var config Config
 	var configPath string
 
+	// Construct default config path: $HOME/.config/pop3-downloader-config.toml
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not determine home directory: %v\n", err)
+		homeDir = "."
+	}
+	defaultConfigPath := filepath.Join(homeDir, ".config", "pop3-downloader-config.toml")
+
 	flag.StringVar(&config.Host, "host", "", "POP3S server hostname (required)")
 	flag.IntVar(&config.Port, "port", 995, "POP3S server port")
 	flag.StringVar(&config.Username, "username", "", "Username for authentication (required)")
-	flag.StringVar(&configPath, "config", "config.toml", "Path to config file containing password")
+	flag.StringVar(&configPath, "config", defaultConfigPath, "Path to config file containing password")
 	flag.StringVar(&config.MboxPath, "mbox", "./messages.mbox", "Path to output mbox file")
 	flag.BoolVar(&config.DryRun, "dryrun", false, "Download messages without deleting from server")
 
