@@ -1,0 +1,13 @@
+From: another@example.com
+To: recipient@example.com
+Subject: Test Email 2
+Message-ID: <test-message-002@example.com>
+Date: Mon, 13 Jan 2025 11:00:00 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+This is the body of test email 2.
+Different content from email 1.
+
+Cheers,
+Another Sender

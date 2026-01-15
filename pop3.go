@@ -37,6 +37,30 @@ func connectPOP3S(config Config) (*pop3.Conn, error) {
 	return conn, nil
 }
 
+// connectPOP3 creates a plain (non-TLS) POP3 connection, primarily for testing
+func connectPOP3(host string, port int, username, password string) (*pop3.Conn, error) {
+	opt := pop3.Opt{
+		Host:       host,
+		Port:       port,
+		TLSEnabled: false,
+	}
+
+	client := pop3.New(opt)
+
+	conn, err := client.NewConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection: %w", err)
+	}
+
+	err = conn.Auth(username, password)
+	if err != nil {
+		conn.Quit()
+		return nil, fmt.Errorf("authentication failed: %w", err)
+	}
+
+	return conn, nil
+}
+
 func fetchAllMessages(conn *pop3.Conn) ([]MessageData, error) {
 	// Get message count
 	count, _, err := conn.Stat()
