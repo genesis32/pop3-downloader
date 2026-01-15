@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
@@ -17,6 +18,7 @@ type Config struct {
 	Password string
 	MboxPath string
 	DryRun   bool
+	Read     bool
 }
 
 type ConfigFile struct {
@@ -47,6 +49,7 @@ func parseFlags() Config {
 	flag.StringVar(&configPath, "config", defaultConfigPath, "Path to config file containing password")
 	flag.StringVar(&config.MboxPath, "mbox", "./messages.mbox", "Path to output mbox file")
 	flag.BoolVar(&config.DryRun, "dryrun", false, "Download messages without deleting from server")
+	flag.BoolVar(&config.Read, "read", false, "Open mbox in mutt after download (requires mutt in PATH)")
 
 	flag.Parse()
 
@@ -78,6 +81,20 @@ func parseFlags() Config {
 	return config
 }
 
+func openMutt(mboxPath string) error {
+	muttPath, err := exec.LookPath("mutt")
+	if err != nil {
+		return fmt.Errorf("mutt not found in PATH: %w", err)
+	}
+
+	cmd := exec.Command(muttPath, "-R", "-f", mboxPath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 func run(config Config) error {
 	// 1. Connect to POP3S server
 	fmt.Printf("Connecting to %s:%d...\n", config.Host, config.Port)
@@ -97,6 +114,12 @@ func run(config Config) error {
 
 	if len(messages) == 0 {
 		fmt.Println("No messages to download")
+		if config.Read {
+			fmt.Println("Opening mbox in mutt...")
+			if err := openMutt(config.MboxPath); err != nil {
+				return fmt.Errorf("failed to open mutt: %w", err)
+			}
+		}
 		return nil
 	}
 
@@ -122,6 +145,14 @@ func run(config Config) error {
 		}
 		fmt.Println("Messages deleted from server")
 		fmt.Printf("\nSuccessfully downloaded %d message(s) to %s\n", len(messages), config.MboxPath)
+	}
+
+	// 5. Open mutt if requested
+	if config.Read {
+		fmt.Println("Opening mbox in mutt...")
+		if err := openMutt(config.MboxPath); err != nil {
+			return fmt.Errorf("failed to open mutt: %w", err)
+		}
 	}
 
 	return nil
