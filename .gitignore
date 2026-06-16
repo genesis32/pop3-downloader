@@ -1,3 +1,4 @@
 pop3-downloader
 messages.mbox
 config.toml
+.idea/**
